@@ -11,7 +11,7 @@ export default {
     const url = new URL(request.url);
     const host = request.headers.get("host") || url.host || "localhost";
     const today = new Date().toISOString().slice(0, 10); // YYYY-MM-DD UTC
-    const version = "v10";
+    const version = "v11";
 
   const cacheKey = new Request(`https://${host}/${version}/__md/${today}`, {
       method: "GET",
@@ -354,6 +354,8 @@ footer a {
   font-style: italic;
   font-weight: 600;
 }
+em { font-style: italic; }
+strong { font-weight: 700; }
 @media (max-width: 520px) {
   footer { flex-direction: column; align-items: flex-start; }
 }
