@@ -470,7 +470,7 @@ function renderFooter(generatedAt) {
 
 function renderMarkdown(markdown) {
   let escaped = escapeHtml(markdown);
-  escaped = escaped.replace(/\*\*(.+?)\*\*/g, '<em class="strong-italic">$1</em>');
+  escaped = escaped.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
   escaped = escaped.replace(/\*(.+?)\*/g, '<em>$1</em>');
   escaped = escaped.replace(/~~(.+?)~~/g, '<del>$1</del>');
   return escaped;
