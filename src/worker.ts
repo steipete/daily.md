@@ -118,7 +118,7 @@ async function callXai(env: Env, prompt: string): Promise<string> {
       {
         role: "system",
         content:
-          "You write concise, thoughtful Markdown essays. Do not mention Markdown or formatting itself. No HTML. No images. Do not mention the prompt.",
+          "You write concise, thoughtful Markdown essays. Do not mention Markdown or formatting itself. No HTML. No images. Do not mention the prompt. Never use an em-dash (—); use commas or colons instead.",
       },
       { role: "user", content: prompt },
     ],
