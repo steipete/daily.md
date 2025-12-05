@@ -373,7 +373,7 @@ footer span, footer a { white-space: nowrap; }
 <body>
   <pre>${renderedHtml}</pre>
   <footer>
-    <span>Generated on ${generatedAt} UTC</span>
+    <span>Generated on ${generatedAt}</span>
     <a href="https://steipete.me">a @steipete project</a>
   </footer>
 </body>
