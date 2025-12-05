@@ -319,7 +319,7 @@ function wrapShell(host, renderedHtml, generatedAt) {
 body {
   font: 16px/1.6 "IBM Plex Mono", "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   max-width: 72ch;
-  margin: 8vh auto 10vh;
+  margin: 4vh auto 5vh;
   padding: 0 1.5rem;
   background: var(--bg, #f8f8f5);
   color: var(--fg, #111);
@@ -349,6 +349,10 @@ footer {
 footer a {
   color: inherit;
   text-decoration: none;
+}
+.strong-italic {
+  font-style: italic;
+  font-weight: 600;
 }
 @media (max-width: 520px) {
   footer { flex-direction: column; align-items: flex-start; }
@@ -465,46 +469,9 @@ function renderFooter(generatedAt) {
 }
 
 function renderMarkdown(markdown) {
-  const state = { html: [] };
-  const lines = markdown.split(/\n/);
-  for (const line of lines) {
-    renderLine(line, state);
-  }
-  return state.html.join("\n");
-}
-
-function renderLine(rawLine, state) {
-  const line = rawLine.trimEnd();
-  if (!line) {
-    state.html.push("<p>&nbsp;</p>");
-    return;
-  }
-
-  const heading = line.match(/^(#{1,3})\s+(.*)$/);
-  if (heading) {
-    const content = parseInline(heading[2]);
-    state.html.push(`<p><strong>${content}</strong></p>`);
-    return;
-  }
-
-  const bullet = line.match(/^[-*]\s+(.*)$/);
-  if (bullet) {
-    const content = parseInline(bullet[1]);
-    state.html.push(`<p>- ${content}</p>`);
-    return;
-  }
-
-  const content = parseInline(line);
-  state.html.push(`<p>${content}</p>`);
-}
-
-function parseInline(text) {
-  let escaped = escapeHtml(text);
-  // bold/italic via **text** rendered as italic-bold
+  let escaped = escapeHtml(markdown);
   escaped = escaped.replace(/\*\*(.+?)\*\*/g, '<em class="strong-italic">$1</em>');
-  // italics via *text*
   escaped = escaped.replace(/\*(.+?)\*/g, '<em>$1</em>');
-  // strikeout via ~~text~~
   escaped = escaped.replace(/~~(.+?)~~/g, '<del>$1</del>');
   return escaped;
 }
