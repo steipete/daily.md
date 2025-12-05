@@ -196,6 +196,18 @@ footer {
   font-size: 12px;
   letter-spacing: 0.02em;
   opacity: 0.7;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+}
+footer a {
+  color: inherit;
+  text-decoration: underline;
+}
+@media (max-width: 520px) {
+  footer { flex-direction: column; align-items: flex-start; }
+}
 }`;
 
   return `<!doctype html>
@@ -208,7 +220,10 @@ footer {
 </head>
 <body>
   <pre>${escapedText}</pre>
-  <footer>Generated on ${generatedAt} UTC · one-per-day cache</footer>
+  <footer>
+    <span>Generated on ${generatedAt} UTC</span>
+    <a href="https://steipete.me" target="_blank" rel="noopener">a @steipete project</a>
+  </footer>
 </body>
 </html>`;
 }

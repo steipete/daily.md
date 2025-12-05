@@ -33,6 +33,7 @@ Styling
 - Monospace stack: IBM Plex Mono / JetBrains Mono / ui-monospace fallback.
 - `:root { color-scheme: light dark; }` neutral palettes.
 - Layout: max-width ~72ch, generous margins; `<pre>` preserves markdown.
+- Footer: left “Generated on … UTC”, right link `a @steipete project` → https://steipete.me; flex layout collapses vertically on small screens.
 
 Config (wrangler.toml)
 - Durable Object binding `DOMAIN_DO` with migration tag `v1`.
