@@ -1,13 +1,13 @@
 # Daily Markdown Per Domain – Spec (AI Gateway + xAI)
 
-Last updated: 2025-12-05
+Last updated: 2025-12-05 (shorter text + Grok 4.1 fast reasoning)
 
 Goal: Serve one markdown essay per domain per UTC day. First request generates and caches; all later requests reuse it. Style is minimal, monospace, with automatic light/dark.
 
 Architecture
 - Cloudflare Worker handles HTTP; edge cache (`caches.default`) 24h + `stale-while-revalidate=3600`.
 - Durable Object `DomainDO` per hostname enforces single generation per day; stores `{text, generatedAt}` with ~27h TTL.
-- AI generation via Cloudflare AI Gateway (OpenAI-compatible) pointing to xAI Grok 4.1 fast non-reasoning.
+- AI generation via Cloudflare AI Gateway (OpenAI-compatible) pointing to xAI Grok 4.1 fast reasoning.
 - Rendering: raw markdown inside `<pre>` within minimal HTML; footer shows date.
 
 Data keys
@@ -22,9 +22,9 @@ Request flow
 4) Worker renders HTML and asynchronously seeds edge cache.
 
 Prompt (summary)
-- Host-aware, philosophical, 450–750 words, Markdown only.
+- Host-aware, philosophical, 220–400 words, Markdown only.
 - H1 title; 2–3 H2 sections; at most one bullet list; italic one-line closing.
-- Temperature 0.65, `max_tokens` 900, English only, no images/HTML/links.
+- Temperature ~0.6, `max_tokens` ~500, English only, no images/HTML/links.
 
 Failure mode
 - On AI error/empty response, deterministic fallback markdown is returned and cached for the day.

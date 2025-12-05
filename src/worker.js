@@ -11,7 +11,7 @@ export default {
     const url = new URL(request.url);
     const host = request.headers.get("host") || url.host || "localhost";
     const today = new Date().toISOString().slice(0, 10); // YYYY-MM-DD UTC
-    const version = "v4";
+    const version = "v5";
 
     const cacheKey = new Request(`https://${host}/${version}/__md/${today}`, {
       method: "GET",
@@ -113,7 +113,7 @@ async function callXai(env, prompt) {
     env.GATEWAY_BASE ||
     "https://gateway.ai.cloudflare.com/v1/ACCOUNT_ID/GATEWAY_ID/compat";
   const body = {
-    model: "grok-4-1-fast-non-reasoning",
+    model: "grok-4-1-fast-reasoning",
     messages: [
       {
         role: "system",
@@ -122,9 +122,9 @@ async function callXai(env, prompt) {
       },
       { role: "user", content: prompt },
     ],
-    temperature: 0.65,
+    temperature: 0.6,
     top_p: 0.9,
-    max_tokens: 900,
+    max_tokens: 500,
     stream: false,
   };
 
@@ -152,7 +152,7 @@ async function callXai(env, prompt) {
 }
 
 function buildPrompt(host, today) {
-  return `Write a reflective Markdown piece (450-750 words) for the site "${host}".
+  return `Write a reflective Markdown piece (220-400 words) for the site "${host}".
 Theme: derive meaning, metaphor, or philosophy from the domain name itself.
 Tone: contemplative, clear, modern; avoid clichés.
 Structure:

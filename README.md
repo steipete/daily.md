@@ -4,7 +4,7 @@ Minimal Cloudflare Worker that serves a single AI-generated markdown essay per h
 
 What it uses
 - Cloudflare Worker + Durable Object
-- Cloudflare AI Gateway (OpenAI-compatible) pointing to xAI Grok 4.1 fast non-reasoning
+- Cloudflare AI Gateway (OpenAI-compatible) pointing to xAI Grok 4.1 fast reasoning
 - Edge cache 24h + stale-while-revalidate 1h
 
 Quick start
@@ -20,7 +20,7 @@ Quick start
 Behavior
 - One generation per host per UTC day; DO stores `{text, generatedAt}` with ~27h TTL.
 - Edge cache keyed per host/day; headers: `ETag` = `host:date`, `X-Generated-On` = date.
-- Prompt: philosophical, host-aware, 450–750 words, H1 + H2 sections, optional single bullet list, italic closing line.
+- Prompt: philosophical, host-aware, ~220–400 words, H1 + H2 sections, optional single bullet list, italic closing line.
 - Fallback text is deterministic if the AI call fails.
 - Footer shows generation date and a right-aligned link “a @steipete project” → https://steipete.me.
 

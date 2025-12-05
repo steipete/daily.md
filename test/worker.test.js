@@ -8,7 +8,7 @@ describe("prompt", () => {
     const prompt = buildPrompt(host, today);
     expect(prompt).toContain(host);
     expect(prompt).toContain(today);
-    expect(prompt).toContain("450-750 words");
+    expect(prompt).toContain("220-400 words");
   });
 });
 
