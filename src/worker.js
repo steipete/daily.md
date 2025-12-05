@@ -29,11 +29,11 @@ export default {
     if (doRes.ok) {
       /** @type {{ text: string, generatedAt: string }} */
       const payload = await doRes.json();
-      const html = renderPage({
-        host,
-        text: payload.text,
-        generatedAt: payload.generatedAt,
-      });
+    const html = renderPage({
+      host,
+      text: payload.text,
+      generatedAt: payload.generatedAt,
+    });
       const response = new Response(html, {
         headers: {
           "content-type": "text/html; charset=utf-8",
@@ -304,11 +304,11 @@ async function streamGenerate(host, today, version, env, stub) {
 }
 
 function renderPage({ host, text, generatedAt }) {
-  const escapedText = escapeHtml(text);
-  return wrapShell(host, escapedText, generatedAt);
+  const rendered = renderMarkdown(text);
+  return wrapShell(host, rendered, generatedAt);
 }
 
-function wrapShell(host, escapedText, generatedAt) {
+function wrapShell(host, renderedHtml, generatedAt) {
   const css = `
 :root { color-scheme: light dark; }
 body {
@@ -428,6 +428,16 @@ footer a {
   color: inherit;
   text-decoration: none;
 }
+.strong-italic {
+  font-style: italic;
+  font-weight: 600;
+}
+h1 { font-size: 2rem; font-weight: 700; margin: 1.4rem 0 0.6rem; }
+h2 { font-size: 1.4rem; font-weight: 650; margin: 1rem 0 0.4rem; }
+h3 { font-size: 1.2rem; font-weight: 600; margin: 0.8rem 0 0.3rem; }
+p { margin: 0.3rem 0 0.6rem; }
+ul { margin: 0.4rem 0 0.8rem 1.2rem; padding: 0; }
+li { margin: 0.2rem 0; }
 @media (max-width: 520px) {
   footer { flex-direction: column; align-items: flex-start; }
 }
@@ -452,4 +462,64 @@ function renderFooter(generatedAt) {
   </footer>
 </body>
 </html>`;
+}
+
+function renderMarkdown(markdown) {
+  const state = { openList: false, html: [] };
+  const lines = markdown.split(/\n/);
+  for (const line of lines) {
+    renderLine(line, state);
+  }
+  if (state.openList) {
+    state.html.push("</ul>");
+    state.openList = false;
+  }
+  return state.html.join("\n");
+}
+
+function renderLine(rawLine, state) {
+  const line = rawLine.trimEnd();
+  if (!line) {
+    if (state.openList) {
+      state.html.push("</ul>");
+      state.openList = false;
+    }
+    state.html.push("<p>&nbsp;</p>");
+    return;
+  }
+
+  const heading = line.match(/^(#{1,3})\s+(.*)$/);
+  if (heading) {
+    const level = heading[1].length;
+    const content = parseInline(heading[2]);
+    if (state.openList) {
+      state.html.push("</ul>");
+      state.openList = false;
+    }
+    state.html.push(`<h${level}>${content}</h${level}>`);
+    return;
+  }
+
+  const bullet = line.match(/^[-*]\s+(.*)$/);
+  if (bullet) {
+    const content = parseInline(bullet[1]);
+    if (!state.openList) {
+      state.html.push("<ul>");
+      state.openList = true;
+    }
+    state.html.push(`<li>${content}</li>`);
+    return;
+  }
+
+  const content = parseInline(line);
+  state.html.push(`<p>${content}</p>`);
+}
+
+function parseInline(text) {
+  let escaped = escapeHtml(text);
+  // bold/italic via **text** rendered as italic-bold
+  escaped = escaped.replace(/\*\*(.+?)\*\*/g, '<em class="strong-italic">$1</em>');
+  // italics via *text*
+  escaped = escaped.replace(/\*(.+?)\*/g, '<em>$1</em>');
+  return escaped;
 }
