@@ -11,9 +11,9 @@ export default {
     const url = new URL(request.url);
     const host = request.headers.get("host") || url.host || "localhost";
     const today = new Date().toISOString().slice(0, 10); // YYYY-MM-DD UTC
-    const version = "v8";
+    const version = "v9";
 
-    const cacheKey = new Request(`https://${host}/${version}/__md/${today}`, {
+  const cacheKey = new Request(`https://${host}/${version}/__md/${today}`, {
       method: "GET",
     });
 
@@ -437,12 +437,7 @@ footer a {
   font-style: italic;
   font-weight: 600;
 }
-h1 { font-size: 2rem; font-weight: 700; margin: 1.4rem 0 0.6rem; }
-h2 { font-size: 1.4rem; font-weight: 650; margin: 1rem 0 0.4rem; }
-h3 { font-size: 1.2rem; font-weight: 600; margin: 0.8rem 0 0.3rem; }
 p { margin: 0.3rem 0 0.6rem; }
-ul { margin: 0.4rem 0 0.8rem 1.2rem; padding: 0; }
-li { margin: 0.2rem 0; }
 @media (max-width: 520px) {
   footer { flex-direction: column; align-items: flex-start; }
 }
@@ -470,14 +465,10 @@ function renderFooter(generatedAt) {
 }
 
 function renderMarkdown(markdown) {
-  const state = { openList: false, html: [] };
+  const state = { html: [] };
   const lines = markdown.split(/\n/);
   for (const line of lines) {
     renderLine(line, state);
-  }
-  if (state.openList) {
-    state.html.push("</ul>");
-    state.openList = false;
   }
   return state.html.join("\n");
 }
@@ -485,34 +476,21 @@ function renderMarkdown(markdown) {
 function renderLine(rawLine, state) {
   const line = rawLine.trimEnd();
   if (!line) {
-    if (state.openList) {
-      state.html.push("</ul>");
-      state.openList = false;
-    }
     state.html.push("<p>&nbsp;</p>");
     return;
   }
 
   const heading = line.match(/^(#{1,3})\s+(.*)$/);
   if (heading) {
-    const level = heading[1].length;
     const content = parseInline(heading[2]);
-    if (state.openList) {
-      state.html.push("</ul>");
-      state.openList = false;
-    }
-    state.html.push(`<h${level}>${content}</h${level}>`);
+    state.html.push(`<p><strong>${content}</strong></p>`);
     return;
   }
 
   const bullet = line.match(/^[-*]\s+(.*)$/);
   if (bullet) {
     const content = parseInline(bullet[1]);
-    if (!state.openList) {
-      state.html.push("<ul>");
-      state.openList = true;
-    }
-    state.html.push(`<li>${content}</li>`);
+    state.html.push(`<p>- ${content}</p>`);
     return;
   }
 
@@ -526,5 +504,7 @@ function parseInline(text) {
   escaped = escaped.replace(/\*\*(.+?)\*\*/g, '<em class="strong-italic">$1</em>');
   // italics via *text*
   escaped = escaped.replace(/\*(.+?)\*/g, '<em>$1</em>');
+  // strikeout via ~~text~~
+  escaped = escaped.replace(/~~(.+?)~~/g, '<del>$1</del>');
   return escaped;
 }
