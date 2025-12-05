@@ -1,6 +1,6 @@
-# Daily Markdown Per Domain – Spec (AI Gateway + xAI)
+# lore.md — Daily Markdown Per Domain (AI Gateway + xAI)
 
-Last updated: 2025-12-05 (shorter text + Grok 4.1 fast reasoning)
+Last updated: 2025-12-05 (shorter text + Grok 4.1 fast reasoning, renamed to lore.md)
 
 Goal: Serve one markdown essay per domain per UTC day. First request generates and caches; all later requests reuse it. Style is minimal, monospace, with automatic light/dark.
 

@@ -1,4 +1,4 @@
-# daily.md — One Markdown Page Per Domain Per Day
+# lore.md — One Markdown Page Per Domain Per Day
 
 Minimal Cloudflare Worker that serves a single AI-generated markdown essay per hostname per UTC day. First request triggers generation; the result is cached at the edge and in a Durable Object so you pay for one model call per day per domain. Output is plaintext markdown displayed inside a monospace HTML shell with automatic light/dark.
 
