@@ -48,7 +48,7 @@ export default {
     }
 
     // 2) Stream generation (default on cache miss); caches after completion.
-    return streamGenerate(host, today, version, env, stub);
+    return streamGenerate(host, today, version, env, stub, ctx);
   },
 };
 
@@ -241,7 +241,7 @@ Until it wakes, take this small reminder: meaning often shows up after the first
 _Generated on ${today} UTC; cached until the next sunrise._`;
 }
 
-async function streamGenerate(host, today, version, env, stub) {
+async function streamGenerate(host, today, version, env, stub, ctx) {
   const prompt = buildPrompt(host, today);
   const ts = new TransformStream();
   const writer = ts.writable.getWriter();
@@ -249,58 +249,63 @@ async function streamGenerate(host, today, version, env, stub) {
   const header = renderHead(host);
   const footer = renderFooter(today);
 
-  let collected = "";
-  const write = async (chunk) => {
-    collected += chunk;
-    await writer.write(encoder.encode(chunk));
-  };
-
-  try {
-    // write shell pre + opening <pre>
-    await writer.write(encoder.encode(header));
-    await callXaiStream(env, prompt, write);
-    await writer.write(encoder.encode(footer));
-    // Persist to DO for the rest of the day
-    if (collected.trim().length && stub) {
-      await stub.fetch("https://domain-do/store", {
-        method: "POST",
-        headers: {
-          host,
-          "content-type": "application/json",
-          "x-md-version": version,
-        },
-        body: JSON.stringify({ text: collected, generatedAt: today }),
-      });
-    }
-  } catch (err) {
-    console.error("stream error", err);
-  } finally {
-    await writer.close();
-  }
-
-  // cache full page after stream completes (if we got anything)
-  if (collected.trim().length) {
-    const html = wrapShell(host, collected, today);
-    const response = new Response(html, {
-      headers: {
-        "content-type": "text/html; charset=utf-8",
-        "cache-control": "public, max-age=86400, stale-while-revalidate=3600",
-        etag: `${host}:${version}:${today}`,
-        "x-generated-on": today,
-        "x-md-version": version,
-      },
-    });
-    const cacheKey = new Request(`https://${host}/${version}/__md/${today}`);
-    await caches.default.put(cacheKey, response);
-  }
-
-  return new Response(ts.readable, {
+  const response = new Response(ts.readable, {
     headers: {
       "content-type": "text/html; charset=utf-8",
       "transfer-encoding": "chunked",
       "x-md-version": version,
     },
   });
+
+  ctx.waitUntil(
+    (async () => {
+      let collected = "";
+      const write = async (chunk) => {
+        collected += chunk;
+        await writer.write(encoder.encode(chunk));
+      };
+
+      try {
+        await writer.write(encoder.encode(header));
+        await callXaiStream(env, prompt, write);
+        await writer.write(encoder.encode(footer));
+
+        if (collected.trim().length && stub) {
+          await stub.fetch("https://domain-do/store", {
+            method: "POST",
+            headers: {
+              host,
+              "content-type": "application/json",
+              "x-md-version": version,
+            },
+            body: JSON.stringify({ text: collected, generatedAt: today }),
+          });
+        }
+
+        if (collected.trim().length) {
+          const html = wrapShell(host, collected, today);
+          const cacheKey = new Request(`https://${host}/${version}/__md/${today}`);
+          const cachedResponse = new Response(html, {
+            headers: {
+              "content-type": "text/html; charset=utf-8",
+              "cache-control": "public, max-age=86400, stale-while-revalidate=3600",
+              etag: `${host}:${version}:${today}`,
+              "x-generated-on": today,
+              "x-md-version": version,
+            },
+          });
+          await caches.default.put(cacheKey, cachedResponse);
+        }
+      } catch (err) {
+        console.error("stream error", err);
+        await writer.write(encoder.encode("\n\n<p><em>generation failed</em></p>"));
+      } finally {
+        await writer.close();
+      }
+    })()
+  );
+
+  return response;
 }
 
 function renderPage({ host, text, generatedAt }) {
@@ -359,7 +364,7 @@ footer a {
   <style>${css}</style>
 </head>
 <body>
-  <pre>${escapedText}</pre>
+  <pre>${renderedHtml}</pre>
   <footer>
     <span>Generated on ${generatedAt} UTC</span>
     <a href="https://steipete.me" target="_blank" rel="noopener">a @steipete project</a>
