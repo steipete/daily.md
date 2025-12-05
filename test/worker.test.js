@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { buildPrompt, fallbackText, renderPage } from "../src/worker.js";
+import { buildPrompt, fallbackText, renderPage } from "../src/worker";
 
 describe("prompt", () => {
   it("includes host and date", () => {
