@@ -13,7 +13,7 @@ export default {
     const url = new URL(request.url);
     const host = request.headers.get("host") || url.host || "localhost";
     const today = new Date().toISOString().slice(0, 10); // YYYY-MM-DD UTC
-    const version = "v14";
+    const version = "v15";
 
   const cacheKey = new Request(`https://${host}/${version}/__md/${today}`, {
       method: "GET",
@@ -222,6 +222,7 @@ function buildPrompt(host, today) {
   return `Write a reflective Markdown piece (220-400 words) for the site "${host}".
 Theme: find a simple, thoughtful meaning, metaphor, or philosophy inspired by the domain name.
 Tone: calm, sincere, meaningful; avoid jargon and clichés; use clear, everyday language.
+If no strong philosophical angle emerges, tell a small, heartwarming story instead.
 Structure:
 - Start with a single H1 title.
 - 2-3 short sections with H2 headings.
