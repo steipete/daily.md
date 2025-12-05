@@ -470,9 +470,10 @@ function renderFooter(generatedAt) {
 }
 
 function renderMarkdown(markdown) {
+  // render inline tags but keep decorators visible
   let escaped = escapeHtml(markdown);
-  escaped = escaped.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
-  escaped = escaped.replace(/\*(.+?)\*/g, '<em>$1</em>');
-  escaped = escaped.replace(/~~(.+?)~~/g, '<del>$1</del>');
+  escaped = escaped.replace(/\*\*(.+?)\*\*/g, '<strong>*$1*</strong>');
+  escaped = escaped.replace(/\*(.+?)\*/g, '<em>*$1*</em>');
+  escaped = escaped.replace(/~~(.+?)~~/g, '<del>~~$1~~</del>');
   return escaped;
 }
