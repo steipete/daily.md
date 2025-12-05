@@ -1,6 +1,6 @@
 # lore.md — Daily Markdown Per Domain (AI Gateway + xAI)
 
-Last updated: 2025-12-05 (shorter text + Grok 4.1 fast reasoning, renamed to lore.md)
+Last updated: 2025-12-05 (shorter text + Grok 4.1 fast reasoning, renamed to lore.md, streaming path)
 
 Goal: Serve one markdown essay per domain per UTC day. First request generates and caches; all later requests reuse it. Style is minimal, monospace, with automatic light/dark.
 
@@ -8,7 +8,8 @@ Architecture
 - Cloudflare Worker handles HTTP; edge cache (`caches.default`) 24h + `stale-while-revalidate=3600`.
 - Durable Object `DomainDO` per hostname enforces single generation per day; stores `{text, generatedAt}` with ~27h TTL.
 - AI generation via Cloudflare AI Gateway (OpenAI-compatible) pointing to xAI Grok 4.1 fast reasoning.
-- Rendering: raw markdown inside `<pre>` within minimal HTML; footer shows date.
+- Rendering: raw markdown inside `<pre>` within minimal HTML; footer shows date and project link.
+- Streaming: optional `/stream` path streams AI output on cache miss; after completion the full page is cached.
 
 Data keys
 - DO storage key: `YYYY-MM-DD` per host (host is implied by DO instance id).
@@ -17,9 +18,9 @@ Data keys
 
 Request flow
 1) Worker tries edge cache.
-2) On miss, call DO stub (per host). DO uses `blockConcurrencyWhile`.
-3) If missing, DO calls AI Gateway → xAI, saves text with 27h TTL.
-4) Worker renders HTML and asynchronously seeds edge cache.
+2) On miss:
+   - If path ends with `/stream`, stream the AI response to the client while generating, then cache the completed page.
+   - Otherwise, call DO stub (per host). DO uses `blockConcurrencyWhile`. If missing, DO calls AI Gateway → xAI, saves text with 27h TTL, returns JSON; Worker renders HTML and caches it.
 
 Prompt (summary)
 - Host-aware, philosophical, 220–400 words, Markdown only.
@@ -46,6 +47,7 @@ Deployment steps
 - Set env var `GATEWAY_BASE` (or edit default in code) with your real Account/Gateway IDs.
 - `wrangler deploy`; map domains/routes in Cloudflare.
 - First hit per domain per UTC day triggers generation; edge cache serves the rest.
+- Streaming: hit `/stream` on a cache miss to watch generation; final page still cached for subsequent requests.
 
 CI
 - `.github/workflows/ci.yml` runs `wrangler deploy --dry-run`; requires GitHub secrets `CLOUDFLARE_API_TOKEN`, `XAI_API_KEY`, optional `GATEWAY_TOKEN`, and `GATEWAY_BASE`.

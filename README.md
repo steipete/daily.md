@@ -6,6 +6,7 @@ What it uses
 - Cloudflare Worker + Durable Object
 - Cloudflare AI Gateway (OpenAI-compatible) pointing to xAI Grok 4.1 fast reasoning
 - Edge cache 24h + stale-while-revalidate 1h
+- Optional streaming path `/stream` to show generation live on cache misses
 
 Quick start
 1) `wrangler login` (or export a CF_API_TOKEN with Workers/DO/AI Gateway edit perms).
@@ -23,10 +24,12 @@ Behavior
 - Prompt: philosophical, host-aware, ~220–400 words, H1 + H2 sections, optional single bullet list, italic closing line.
 - Fallback text is deterministic if the AI call fails.
 - Footer shows generation date and a right-aligned link “a @steipete project” → https://steipete.me.
+- Streaming: request `/stream` to stream the AI response when there’s no cache; the completed page is cached afterward for normal `/` hits.
 
 Testing
 - `wrangler dev` then curl twice: `curl -H "Host: yourdomain.test" http://127.0.0.1:8787` and confirm `X-Generated-On` stays fixed.
 - Check AI Gateway analytics to verify only one upstream call per domain per day.
+- Stream test: `curl -N http://127.0.0.1:8787/stream` on a fresh day to observe live output.
 
 Config references
 - `src/worker.js`: worker logic, DO class, Gateway call.
