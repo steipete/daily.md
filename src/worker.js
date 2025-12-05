@@ -11,8 +11,9 @@ export default {
     const url = new URL(request.url);
     const host = request.headers.get("host") || url.host || "localhost";
     const today = new Date().toISOString().slice(0, 10); // YYYY-MM-DD UTC
+    const version = "v2";
 
-    const cacheKey = new Request(`https://${host}/__md/${today}`, {
+    const cacheKey = new Request(`https://${host}/${version}/__md/${today}`, {
       method: "GET",
     });
 
@@ -23,7 +24,7 @@ export default {
     // 2) Ask Durable Object for today's text (generates on first hit).
     const stub = env.DOMAIN_DO.get(env.DOMAIN_DO.idFromName(host));
     const doRes = await stub.fetch("https://domain-do/internal", {
-      headers: { host },
+      headers: { host, "x-md-version": version },
     });
     if (!doRes.ok) {
       return new Response("Upstream generation failed", { status: 502 });
@@ -41,8 +42,9 @@ export default {
       headers: {
         "content-type": "text/html; charset=utf-8",
         "cache-control": "public, max-age=86400, stale-while-revalidate=3600",
-        etag: `${host}:${payload.generatedAt}`,
+        etag: `${host}:${version}:${payload.generatedAt}`,
         "x-generated-on": payload.generatedAt,
+        "x-md-version": version,
       },
     });
 
@@ -69,10 +71,12 @@ export class DomainDO {
     const url = new URL(request.url);
     const host = request.headers.get("host") || url.host || "localhost";
     const today = new Date().toISOString().slice(0, 10);
+    const version = request.headers.get("x-md-version") || "v1";
+    const key = `${version}-${today}`;
 
     // Serialize concurrent requests for same DO instance.
     return await this.state.blockConcurrencyWhile(async () => {
-      const existing = await this.state.storage.get(today);
+      const existing = await this.state.storage.get(key);
       if (existing) {
         return json(existing);
       }
@@ -80,7 +84,7 @@ export class DomainDO {
       const text = await generateDailyText(this.env, host, today);
       const record = { text, generatedAt: today };
 
-      await this.state.storage.put(today, record, {
+      await this.state.storage.put(key, record, {
         expirationTtl: 60 * 60 * 27, // ~27h to cover clock skew.
       });
 
