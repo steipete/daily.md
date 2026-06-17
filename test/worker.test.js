@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { buildPrompt, fallbackText, renderPage } from "../src/worker";
+import { buildGatewayHeaders, buildPrompt, fallbackText, renderPage } from "../src/worker";
 
 describe("prompt", () => {
   it("includes host and date", () => {
@@ -19,6 +19,25 @@ describe("fallback", () => {
     const text = fallbackText(host, today);
     expect(text).toContain(host);
     expect(text).toContain(today);
+  });
+});
+
+describe("gateway headers", () => {
+  it("sends the provider key as Authorization", () => {
+    const headers = buildGatewayHeaders({ XAI_API_KEY: "xai-key" });
+    expect(headers).toEqual({
+      "content-type": "application/json",
+      authorization: "Bearer xai-key",
+    });
+  });
+
+  it("sends authenticated gateway token separately", () => {
+    const headers = buildGatewayHeaders({
+      XAI_API_KEY: "xai-key",
+      GATEWAY_TOKEN: "cloudflare-token",
+    });
+    expect(headers.authorization).toBe("Bearer xai-key");
+    expect(headers["cf-aig-authorization"]).toBe("Bearer cloudflare-token");
   });
 });
 

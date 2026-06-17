@@ -5,6 +5,7 @@ export interface Env {
   DOMAIN_DO: DurableObjectNamespace;
   XAI_API_KEY: string;
   GATEWAY_BASE?: string;
+  XAI_MODEL?: string;
   GATEWAY_TOKEN?: string;
 }
 
@@ -68,7 +69,7 @@ export default {
 };
 
 // Export helpers for testing.
-export { buildPrompt, fallbackText, generateDailyText, renderPage };
+export { buildGatewayHeaders, buildPrompt, fallbackText, generateDailyText, renderPage };
 
 export class DomainDO {
   state: DurableObjectState;
@@ -122,7 +123,7 @@ async function callXai(env: Env, prompt: string): Promise<string> {
   const apiBase =
     env.GATEWAY_BASE || "https://gateway.ai.cloudflare.com/v1/ACCOUNT_ID/GATEWAY_ID/compat";
   const body = {
-    model: "grok-4-1-fast-reasoning",
+    model: env.XAI_MODEL || "grok/grok-4",
     messages: [
       {
         role: "system",
@@ -139,10 +140,7 @@ async function callXai(env: Env, prompt: string): Promise<string> {
 
   const res = await fetch(`${apiBase}/chat/completions`, {
     method: "POST",
-    headers: {
-      "content-type": "application/json",
-      authorization: `Bearer ${env.GATEWAY_TOKEN || env.XAI_API_KEY}`,
-    },
+    headers: buildGatewayHeaders(env),
     body: JSON.stringify(body),
   });
 
@@ -168,7 +166,7 @@ async function callXaiStream(
   const apiBase =
     env.GATEWAY_BASE || "https://gateway.ai.cloudflare.com/v1/ACCOUNT_ID/GATEWAY_ID/compat";
   const body = {
-    model: "grok-4-1-fast-reasoning",
+    model: env.XAI_MODEL || "grok/grok-4",
     messages: [
       {
         role: "system",
@@ -185,10 +183,7 @@ async function callXaiStream(
 
   const res = await fetch(`${apiBase}/chat/completions`, {
     method: "POST",
-    headers: {
-      "content-type": "application/json",
-      authorization: `Bearer ${env.GATEWAY_TOKEN || env.XAI_API_KEY}`,
-    },
+    headers: buildGatewayHeaders(env),
     body: JSON.stringify(body),
   });
 
@@ -223,6 +218,19 @@ async function callXaiStream(
       }
     }
   }
+}
+
+function buildGatewayHeaders(env: Env): Record<string, string> {
+  const headers: Record<string, string> = {
+    "content-type": "application/json",
+    authorization: `Bearer ${env.XAI_API_KEY}`,
+  };
+
+  if (env.GATEWAY_TOKEN) {
+    headers["cf-aig-authorization"] = `Bearer ${env.GATEWAY_TOKEN}`;
+  }
+
+  return headers;
 }
 
 function buildPrompt(host: string, today: string): string {
@@ -312,7 +320,33 @@ async function streamGenerate(
         }
       } catch (err) {
         console.error("stream error", err);
-        await writer.write(encoder.encode("\n\n<p><em>generation failed</em></p>"));
+        const fallback = fallbackText(host, today);
+        const body = `${renderHead(host)}${renderMarkdown(fallback)}${renderFooter(today)}`;
+        await writer.write(encoder.encode(body));
+
+        if (stub) {
+          await stub.fetch("https://domain-do/store", {
+            method: "POST",
+            headers: {
+              host,
+              "content-type": "application/json",
+              "x-md-version": version,
+            },
+            body: JSON.stringify({ text: fallback, generatedAt: today }),
+          });
+        }
+
+        const cacheKey = new Request(`https://${host}/${version}/__md/${today}`);
+        const cachedResponse = new Response(wrapShell(host, renderMarkdown(fallback), today), {
+          headers: {
+            "content-type": "text/html; charset=utf-8",
+            "cache-control": "public, max-age=86400, stale-while-revalidate=3600",
+            etag: `${host}:${version}:${today}`,
+            "x-generated-on": today,
+            "x-md-version": version,
+          },
+        });
+        await caches.default.put(cacheKey, cachedResponse);
       } finally {
         await writer.close();
       }
