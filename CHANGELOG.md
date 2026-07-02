@@ -2,6 +2,8 @@
 
 ## 0.2.1 — Unreleased
 
+- Pin daily essay generation to xAI `grok-4.20-0309-non-reasoning` and refresh the cache namespace so the new model produces a distinct daily record.
+
 ## 0.2.0 — 2026-07-02
 
 ### Highlights

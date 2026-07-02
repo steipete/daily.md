@@ -51,18 +51,18 @@ describe("gateway headers", () => {
 describe("xAI model routing", () => {
   it("adds the provider namespace for Cloudflare's unified API", () => {
     expect(resolveXaiModel("https://gateway.ai.cloudflare.com/v1/account/default/compat")).toBe(
-      "grok/grok-4-1-fast-reasoning",
+      "grok/grok-4.20-0309-non-reasoning",
     );
     expect(resolveXaiModel("https://gateway.ai.cloudflare.com/v1/account/default/compat/")).toBe(
-      "grok/grok-4-1-fast-reasoning",
+      "grok/grok-4.20-0309-non-reasoning",
     );
   });
 
   it("keeps the public model identifier for provider-native endpoints", () => {
     expect(resolveXaiModel("https://gateway.ai.cloudflare.com/v1/account/default/grok/v1")).toBe(
-      "grok-4-1-fast-reasoning",
+      "grok-4.20-0309-non-reasoning",
     );
-    expect(resolveXaiModel("https://api.x.ai/v1")).toBe("grok-4-1-fast-reasoning");
+    expect(resolveXaiModel("https://api.x.ai/v1")).toBe("grok-4.20-0309-non-reasoning");
   });
 });
 
@@ -338,6 +338,32 @@ describe("DomainDO daily generation", () => {
     expect(fetchMock).not.toHaveBeenCalled();
     expect([...state.values.entries()]).toEqual([["v15-daily", record]]);
   });
+
+  it("keeps a new model cache version separate from the previous daily record", async () => {
+    const fetchMock = vi.fn(async () =>
+      Response.json({ choices: [{ message: { content: "# New model page" } }] }),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+    const previous = { text: "# Previous model page", generatedAt: "2025-12-05" };
+    const state = createState([["v16-daily", previous]]);
+    const domainDO = new DomainDO(state, { XAI_API_KEY: "xai-key" });
+
+    const response = await domainDO.fetch(
+      new Request("https://domain-do/daily", {
+        headers: { "x-md-host": "example.com", "x-md-version": "v17" },
+      }),
+    );
+
+    expect(await response.json()).toEqual({
+      text: "# New model page",
+      generatedAt: "2025-12-05",
+    });
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect([...state.values.entries()]).toEqual([
+      ["v16-daily", previous],
+      ["v17-daily", { text: "# New model page", generatedAt: "2025-12-05" }],
+    ]);
+  });
 });
 
 describe("worker fetch", () => {
@@ -369,10 +395,10 @@ describe("worker fetch", () => {
     expect(response.status).toBe(200);
     expect(await response.text()).toContain("# Daily page");
     expect(doFetch).toHaveBeenCalledWith("https://domain-do/daily", {
-      headers: { "x-md-host": "example.com", "x-md-version": "v16" },
+      headers: { "x-md-host": "example.com", "x-md-version": "v17" },
     });
     expect(cache.put).toHaveBeenCalledTimes(1);
-    expect(response.headers.get("x-md-version")).toBe("v16");
+    expect(response.headers.get("x-md-version")).toBe("v17");
     expect(response.headers.get("x-generated-on")).toBe("2025-12-05");
   });
 
@@ -392,7 +418,7 @@ describe("worker fetch", () => {
     expect(response.status).toBe(200);
     expect(await response.text()).toContain("# Live page");
     expect(doFetch).toHaveBeenCalledWith("https://domain-do/stream", {
-      headers: { "x-md-host": "example.com", "x-md-version": "v16" },
+      headers: { "x-md-host": "example.com", "x-md-version": "v17" },
     });
     expect(cache.put).not.toHaveBeenCalled();
   });

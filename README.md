@@ -7,7 +7,7 @@ Minimal Cloudflare Worker that serves a single AI-generated markdown essay per h
 What it uses
 
 - Cloudflare Worker + Durable Object
-- Cloudflare AI Gateway (OpenAI-compatible) pointing to xAI Grok 4.1 fast reasoning
+- Cloudflare AI Gateway (OpenAI-compatible) pointing to the pinned xAI `grok-4.20-0309-non-reasoning` model
 - Edge cache 24h
 - Durable Object request coalescing so cold misses share one daily generation
 - Optional streaming path `/stream` to show the first generation live on cache miss

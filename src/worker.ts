@@ -1,5 +1,5 @@
 // Daily AI-generated markdown per domain, cached per UTC day.
-// Uses xAI Grok 4.1 fast reasoning via Cloudflare AI Gateway (OpenAI-compatible).
+// Uses pinned xAI Grok 4.20 non-reasoning via Cloudflare AI Gateway (OpenAI-compatible).
 
 export interface Env {
   DOMAIN_DO: DurableObjectNamespace;
@@ -22,14 +22,14 @@ type XaiChatCompletion = {
   response?: string;
 };
 
-const XAI_MODEL = "grok-4-1-fast-reasoning";
+const XAI_MODEL = "grok-4.20-0309-non-reasoning";
 
 export default {
   async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     const url = new URL(request.url);
     const host = request.headers.get("host") || url.host || "localhost";
     const today = new Date().toISOString().slice(0, 10); // YYYY-MM-DD UTC
-    const version = "v16";
+    const version = "v17";
 
     const cacheKey = new Request(`https://${host}/${version}/__md/${today}`, {
       method: "GET",

@@ -1,6 +1,6 @@
 # lore.md — Daily Markdown Per Domain (AI Gateway + xAI)
 
-Last updated: 2025-12-05 (shorter text + Grok 4.1 fast reasoning, renamed to lore.md, DO-coordinated daily generation with streaming)
+Last updated: 2026-07-02 (pinned Grok 4.20 non-reasoning model, DO-coordinated daily generation with streaming)
 
 Goal: Serve one markdown essay per domain per UTC day. First request generates and caches; all later requests reuse it. Style is minimal, monospace, with automatic light/dark.
 
@@ -8,7 +8,7 @@ Architecture
 
 - Cloudflare Worker handles HTTP; edge cache (`caches.default`) 24h.
 - Durable Object `DomainDO` per hostname enforces single generation per day; stores `{text, generatedAt}` in one overwritten slot per cache version.
-- AI generation via Cloudflare AI Gateway (OpenAI-compatible) pointing to xAI Grok 4.1 fast reasoning.
+- AI generation via Cloudflare AI Gateway (OpenAI-compatible) pointing to the pinned xAI `grok-4.20-0309-non-reasoning` model.
 - Rendering: raw markdown inside `<pre>` within minimal HTML; footer shows date and project link.
 - Streaming: optional `/stream` path streams the first uncached generation from the Durable Object; concurrent `/` or `/stream` misses wait on the same in-flight record.
 
@@ -17,6 +17,7 @@ Data keys
 - DO storage key: `{version}-daily` per host (host is implied by DO instance id); the record date decides whether it is current. Today's legacy `{version}-{YYYY-MM-DD}` record is migrated on first read.
 - Edge cache key: `https://{host}/{version}/__md/{YYYY-MM-DD}`.
 - `ETag`: `{host}:{version}:{date}`; header `X-Generated-On` echoes date.
+- Model changes advance the cache version. The new version generates a fresh daily record without deleting the previous version's slot, keeping rollback reversible.
 
 Request flow
 
