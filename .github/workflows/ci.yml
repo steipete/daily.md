@@ -11,15 +11,21 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Set up Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
-          node-version: 20
+          node-version: 22
 
-      - name: Install Wrangler
-        run: npm install -g wrangler@4
+      - name: Enable pnpm
+        run: corepack enable
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Check
+        run: pnpm check
 
       - name: Dry-run deploy (bundle validation)
         env:
@@ -28,4 +34,4 @@ jobs:
           XAI_API_KEY: ${{ secrets.XAI_API_KEY }}
           GATEWAY_BASE: ${{ secrets.GATEWAY_BASE }}
           GATEWAY_TOKEN: ${{ secrets.GATEWAY_TOKEN }}
-        run: wrangler deploy --dry-run
+        run: pnpm exec wrangler deploy --dry-run
