@@ -12,17 +12,17 @@
     "check": "pnpm lint && pnpm test"
   },
   "devDependencies": {
-    "@cloudflare/workers-types": "^5.20260830.1",
-    "oxfmt": "^0.65.0",
-    "oxlint": "^1.80.0",
+    "@cloudflare/workers-types": "^5.20260903.1",
+    "oxfmt": "^0.66.0",
+    "oxlint": "^1.81.0",
     "oxlint-tsgolint": "^7.0.2001",
     "typescript": "^7.0.2",
     "vite": "^8.2.2",
     "vitest": "^4.1.11",
-    "wrangler": "^4.127.1"
+    "wrangler": "^4.128.0"
   },
   "engines": {
     "node": ">=22.13"
   },
-  "packageManager": "pnpm@11.24.0"
+  "packageManager": "pnpm@11.25.0"
 }
